@@ -1,5 +1,5 @@
 # Node.js
-node_modules/
+node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -27,3 +27,11 @@ jspm_packages/
 # Build output
 dist/
 build/
+
+# Thêm các file và thư mục cần bỏ qua
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+frontend/.vite
+frontend/.cache

@@ -4,7 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>San Bong</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      // Khởi tạo timer và các biến cần thiết
+      var timer = null;
+      function updateTime() {
+        // Empty function to prevent errors
+      }
+      // Đảm bảo các biến được khởi tạo trước khi jQuery load
+      $(document).ready(function() {
+        if (typeof timer === 'undefined') {
+          timer = null;
+        }
+        if (typeof updateTime === 'undefined') {
+          updateTime = function() {};
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
