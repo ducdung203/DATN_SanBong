@@ -4,7 +4,7 @@ const Booking = require('../models/Booking'); // Import model Booking
 
 // API đặt sân bóng
 router.post('/', async (req, res) => {
-  const { fieldId, date, startTime, endTime, totalAmount, paymentMethod, userId, fieldType, name, sdt } = req.body;
+  const { fieldId, date, startTime, endTime, totalAmount, userId, fieldType, paymentStatus, name, sdt } = req.body;
   console.log(req.body);
 
   try {
@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
       startTime,
       endTime,
       totalAmount,
-      paymentStatus: paymentMethod === 'vnpay' ? 'pending' : 'unpaid',
+      paymentStatus,
       fieldType,
       name,
       sdt
@@ -24,15 +24,7 @@ router.post('/', async (req, res) => {
 
     await newBooking.save();
 
-    if (paymentMethod === 'vnpay') {
-      // Xử lý logic thanh toán qua VNPAY (giả lập)
-      const vnpayUrl = `https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?amount=${totalAmount}&orderId=${newBooking._id}`;
-      return res.status(201).json({ 
-        message: 'Đặt sân thành công!', 
-        booking: newBooking, 
-        vnpayUrl 
-      });
-    }
+  
 
     res.status(201).json({ 
       message: 'Đặt sân thành công!', 
@@ -56,6 +48,24 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Lấy danh sách đặt sân theo userId
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const bookings = await Booking.find({ userId: req.params.userId })
+      .populate('userId', 'fullname email phone')
+      .populate('fieldId', 'name type price');
+
+    if (!bookings.length) {
+      return res.status(404).json({ message: 'Người dùng này chưa đặt sân nào.' });
+    }
+
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // Xóa đặt sân
 router.delete('/:id', async (req, res) => {

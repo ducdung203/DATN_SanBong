@@ -1,11 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const router = express.Router();
 const userRoutes = require('./routes/users'); // Import route users
 const bookingRoutes = require('./routes/bookings'); // Import route bookings
 const fieldRoutes = require('./routes/fields');
 const deviceRoutes = require('./routes/devices');
 const paymentRoutes = require('./routes/payment'); // Import route payment
+const dashboardRoutes = require('./routes/dashboard');
+
 
 const app = express();
 const port = 4000;
@@ -33,6 +36,8 @@ app.use('/api/devices', deviceRoutes);// Sử dụng route devices
 app.use('/api/users', userRoutes); // Sử dụng route users
 
 app.use('/api/payment', paymentRoutes); // Thêm route payment
+
+app.use('/api/dashboard', dashboardRoutes);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

@@ -31,7 +31,8 @@ export default function AdminBooking() {
     fieldType: '',
     startTime: '',
     endTime: '',
-    totalAmount: 0
+    totalAmount: 0,
+    paymentStatus: 'unpaid'
   });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, booking: null });
   const [conflictDialog, setConflictDialog] = useState({ open: false, conflicts: [] });
@@ -85,7 +86,8 @@ export default function AdminBooking() {
       fieldType: '',
       startTime: '',
       endTime: '',
-      totalAmount: 0
+      totalAmount: 0,
+      paymentStatus: 'unpaid'
     });
     setIsEditing(false);
     setEditingId(null);
@@ -103,18 +105,20 @@ export default function AdminBooking() {
       fieldType: '',
       startTime: '',
       endTime: '',
-      totalAmount: 0
+      totalAmount: 0,
+      paymentStatus: 'unpaid'
     });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    
+    const newFormData = { ...formData, [name]: value };
+    setFormData(newFormData);
+    console.log('handleChange:', name, value, newFormData);
     // Tính tổng tiền khi thay đổi sân hoặc thời gian
     if (name === 'fieldId' || name === 'startTime' || name === 'endTime') {
-      if (formData.fieldId && formData.startTime && formData.endTime) {
-        calculateTotalAmount(formData.fieldId, formData.startTime, formData.endTime);
+      if (newFormData.fieldId && newFormData.startTime && newFormData.endTime) {
+        calculateTotalAmount(newFormData.fieldId, newFormData.startTime, newFormData.endTime);
       }
     }
   };
@@ -156,6 +160,7 @@ export default function AdminBooking() {
 
   const handleSaveBooking = async () => {
     // Validation
+    console.log('handleSaveBooking - formData:', formData);
     if (!formData.customerName || !formData.phoneNumber || !formData.fieldId || !formData.startTime || !formData.endTime) {
       setSnackbar({
         open: true,
@@ -183,10 +188,11 @@ export default function AdminBooking() {
         startTime: formData.startTime,
         endTime: formData.endTime,
         totalAmount: totalAmount,
-        paymentStatus: 'unpaid',
+        paymentStatus: formData.paymentStatus,
         name: formData.customerName,
         sdt: formData.phoneNumber
       };
+      console.log('Booking Data:', bookingData);
 
       // Kiểm tra trùng lịch
       const conflictCheck = await checkTimeConflict(bookingData);
@@ -235,7 +241,8 @@ export default function AdminBooking() {
       fieldType: booking.fieldId?.type || '',
       startTime: booking.startTime || '',
       endTime: booking.endTime || '',
-      totalAmount: booking.totalAmount || 0
+      totalAmount: booking.totalAmount || 0,
+      paymentStatus: booking.paymentStatus || 'unpaid'
     });
     setIsEditing(true);
     setEditingId(booking._id);
@@ -573,7 +580,21 @@ export default function AdminBooking() {
                 required
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                select
+                label="Trạng thái thanh toán"
+                name="paymentStatus"
+                fullWidth
+                value={formData.paymentStatus}
+                onChange={handleChange}
+                required
+              >
+                <MenuItem value="unpaid">Chưa thanh toán</MenuItem>
+                <MenuItem value="paid">Đã thanh toán</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} md={6}>
               <Card variant="outlined" sx={{ bgcolor: 'success.light', p: 2 }}>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <CurrencyExchange color="success" />

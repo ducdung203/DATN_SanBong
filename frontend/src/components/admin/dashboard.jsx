@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Box, Typography, Button, Grid, Card, CardContent, TableContainer, Table,
   TableHead, TableRow, TableCell, TableBody, Paper, IconButton, Chip,
@@ -21,117 +22,66 @@ import {
   Schedule as ScheduleIcon
 } from '@mui/icons-material';
 
-// Dữ liệu mẫu cho sân bóng
-const fields = [
-  { 
-    id: 1, 
-    name: 'Sân A', 
-    type: 'Sân 5 người', 
-    price: '300.000đ/giờ', 
-    status: 'available',
-    image: '/api/placeholder/60/60'
-  },
-  { 
-    id: 2, 
-    name: 'Sân B', 
-    type: 'Sân 7 người', 
-    price: '450.000đ/giờ', 
-    status: 'booked',
-    image: '/api/placeholder/60/60'
-  },
-  { 
-    id: 3, 
-    name: 'Sân C', 
-    type: 'Sân 11 người', 
-    price: '800.000đ/giờ', 
-    status: 'maintenance',
-    image: '/api/placeholder/60/60'
-  },
-  { 
-    id: 4, 
-    name: 'Sân D', 
-    type: 'Sân 5 người', 
-    price: '300.000đ/giờ', 
-    status: 'available',
-    image: '/api/placeholder/60/60'
-  },
-  { 
-    id: 5, 
-    name: 'Sân E', 
-    type: 'Sân 7 người', 
-    price: '450.000đ/giờ', 
-    status: 'available',
-    image: '/api/placeholder/60/60'
-  }
-];
-
-// Dữ liệu mẫu cho lịch đặt sân hôm nay
-const todayBookings = [
-  { 
-    id: 1, 
-    field: 'Sân A', 
-    time: '08:00 - 09:30', 
-    customer: 'Nguyễn Văn A', 
-    phone: '0901234567',
-    totalAmount: '450.000đ',
-    paymentStatus: 'paid' // đã thanh toán
-  },
-  { 
-    id: 2, 
-    field: 'Sân B', 
-    time: '15:00 - 16:30', 
-    customer: 'Trần Văn B', 
-    phone: '0912345678',
-    totalAmount: '675.000đ',
-    paymentStatus: 'pending' // chưa thanh toán
-  },
-  { 
-    id: 3, 
-    field: 'Sân D', 
-    time: '19:00 - 20:30', 
-    customer: 'Lê Văn C', 
-    phone: '0923456789',
-    totalAmount: '450.000đ',
-    paymentStatus: 'paid' // đã thanh toán
-  }
-];
-
 const Dashboard = () => {
   const theme = useTheme();
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+  const [statistics, setStatistics] = useState([
+    { title: 'Tổng số sân', value: '-', icon: <SportsIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />, bgColor: alpha(theme.palette.primary.main, 0.1) },
+    { title: 'Lịch đặt hôm nay', value: '-', icon: <TodayIcon sx={{ fontSize: 40, color: theme.palette.info.main }} />, bgColor: alpha(theme.palette.info.main, 0.1) },
+    { title: 'Doanh thu hôm nay', value: '-', icon: <MoneyIcon sx={{ fontSize: 40, color: theme.palette.success.main }} />, bgColor: alpha(theme.palette.success.main, 0.1) }
+  ]);
+  const [todayBookings, setTodayBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // Cập nhật thời gian mỗi giây
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
-    return () => {
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, []);
-  
-  // Thống kê
-  const statistics = [
-    {
-      title: "Tổng số sân",
-      value: "5",
-      icon: <SportsIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
-      bgColor: alpha(theme.palette.primary.main, 0.1),
-    },
-    {
-      title: "Lịch đặt hôm nay",
-      value: "3",
-      icon: <TodayIcon sx={{ fontSize: 40, color: theme.palette.info.main }} />,
-      bgColor: alpha(theme.palette.info.main, 0.1),
-    },
-    {
-      title: "Doanh thu hôm nay",
-      value: "2.350.000đ",
-      icon: <MoneyIcon sx={{ fontSize: 40, color: theme.palette.success.main }} />,
-      bgColor: alpha(theme.palette.success.main, 0.1),
-    }
-  ];
+
+  // Gọi API lấy dữ liệu dashboard
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [statsRes, bookingsRes] = await Promise.all([
+          axios.get('http://localhost:4000/api/dashboard/stats'),
+          axios.get('http://localhost:4000/api/dashboard/today-bookings')
+        ]);
+        console.log('Thống kê:', statsRes);
+        console.log('Lịch đặt hôm nay:', bookingsRes);
+        const stats = statsRes.data;
+        setStatistics([
+          {
+            title: 'Tổng số sân',
+            value: stats.totalFields,
+            icon: <SportsIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />, bgColor: alpha(theme.palette.primary.main, 0.1)
+          },
+          {
+            title: 'Lịch đặt hôm nay',
+            value: stats.todayBookings,
+            icon: <TodayIcon sx={{ fontSize: 40, color: theme.palette.info.main }} />, bgColor: alpha(theme.palette.info.main, 0.1)
+          },
+          {
+            title: 'Doanh thu hôm nay',
+            value: stats.todayRevenue?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) || '0đ',
+            icon: <MoneyIcon sx={{ fontSize: 40, color: theme.palette.success.main }} />, bgColor: alpha(theme.palette.success.main, 0.1)
+          }
+        ]);
+        setTodayBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
+      } catch (error) {
+        console.error('Lỗi khi tải dữ liệu dashboard:', error);
+        setError('Không thể tải dữ liệu dashboard!');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, [theme.palette]);
 
   return (
     <Box sx={{ p: 3, maxWidth: 1400, mx: 'auto' }}>
@@ -253,84 +203,22 @@ const Dashboard = () => {
                 <TableCell sx={{ fontWeight: 'bold' }}>Số điện thoại</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Tổng tiền</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Trạng thái thanh toán</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {todayBookings.map((booking) => (
-                <TableRow 
-                  key={booking.id}
-                  hover
-                >
-                  <TableCell>
-                    <Chip 
-                      icon={<SportsIcon />} 
-                      label={booking.field} 
-                      variant="outlined" 
-                      color="primary"
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <TimeIcon fontSize="small" color="action" />
-                      <Typography>{booking.time}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <PersonIcon fontSize="small" color="action" />
-                      <Typography>{booking.customer}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <PhoneIcon fontSize="small" color="action" />
-                      <Typography>{booking.phone}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <MoneyIcon fontSize="small" color="success" />
-                      <Typography fontWeight="medium" color="success.main">{booking.totalAmount}</Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    {booking.paymentStatus === 'paid' ? (
-                      <Chip 
-                        icon={<CheckCircleIcon />} 
-                        label="Đã thanh toán" 
-                        color="success" 
-                        size="small"
-                        sx={{ fontWeight: 'medium' }}
-                      />
-                    ) : (
-                      <Chip 
-                        icon={<TimeIcon />} 
-                        label="Chưa thanh toán" 
-                        color="warning" 
-                        size="small"
-                        sx={{ fontWeight: 'medium' }}
-                      />
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="Chỉnh sửa">
-                        <IconButton size="small" color="primary" sx={{ boxShadow: 1 }}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Xóa">
-                        <IconButton size="small" color="error" sx={{ boxShadow: 1 }}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} sx={{ textAlign: 'center', py: 3 }}>
+                    <Typography variant="body1" color="text.secondary">Đang tải dữ liệu...</Typography>
                   </TableCell>
                 </TableRow>
-              ))}
-              {todayBookings.length === 0 && (
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={7} sx={{ textAlign: 'center', py: 3 }}>
+                    <Typography variant="body1" color="error">{error}</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : todayBookings.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} sx={{ textAlign: 'center', py: 3 }}>
                     <Typography variant="body1" color="text.secondary">
@@ -338,6 +226,66 @@ const Dashboard = () => {
                     </Typography>
                   </TableCell>
                 </TableRow>
+              ) : (
+                todayBookings.map((booking) => (
+                  <TableRow 
+                    key={booking._id || booking.id}
+                    hover
+                  >
+                    <TableCell>
+                      <Chip 
+                        icon={<SportsIcon />} 
+                        label={booking.fieldId?.name || 'N/A'} 
+                        variant="outlined" 
+                        color="primary"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <TimeIcon fontSize="small" color="action" />
+                        <Typography>{booking.startTime && booking.endTime ? `${booking.startTime} - ${booking.endTime}` : booking.time}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <PersonIcon fontSize="small" color="action" />
+                        <Typography>{booking.userId?.fullname || booking.name || 'N/A'}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <PhoneIcon fontSize="small" color="action" />
+                        <Typography>{booking.userId?.phone || booking.sdt || 'N/A'}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <MoneyIcon fontSize="small" color="success" />
+                        <Typography fontWeight="medium" color="success.main">{booking.totalAmount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) || booking.totalAmount || '0đ'}</Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      {booking.paymentStatus === 'paid' ? (
+                        <Chip 
+                          icon={<CheckCircleIcon />} 
+                          label="Đã thanh toán" 
+                          color="success" 
+                          size="small"
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                      ) : (
+                        <Chip 
+                          icon={<TimeIcon />} 
+                          label="Chưa thanh toán" 
+                          color="warning" 
+                          size="small"
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
