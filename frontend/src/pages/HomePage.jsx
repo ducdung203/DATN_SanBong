@@ -38,6 +38,7 @@ import 'swiper/css/navigation';
 
 import LoginDialog from '../components/LoginDiaLog';
 import AdminPage from './AdminPage';
+import BookingHistoryDialog from '../components/BookingHistoryDialog';
 
 
 function HomePage() {
@@ -145,6 +146,7 @@ useEffect(() => {
         console.log('Thông tin người dùng:', user);
         setCurrentUser(user.fullname); // Lưu thông tin người dùng
         setUserInfo(user);
+        console.log('id người dùng:', user._id);
         setRole(role); // Lưu vai trò
       })
       .catch((err) => {
@@ -158,6 +160,44 @@ useEffect(() => {
     setLoading(false); // Không có token, kết thúc tải dữ liệu
   }
 }, []);
+
+const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+const [bookingHistory, setBookingHistory] = useState([]);
+const [historyLoading, setHistoryLoading] = useState(false);
+
+const handleOpenHistoryDialog = async () => {
+  if (!userInfo?._id) {
+    setSnackbar({
+      open: true,
+      message: 'Bạn cần đăng nhập để xem lịch sử đặt sân!',
+      severity: 'warning',
+    });
+    return;
+  }
+  setHistoryDialogOpen(true);
+  setHistoryLoading(true);
+  try {
+    const token = localStorage.getItem('token');
+    const res = await axios.get(`http://localhost:4000/api/bookings/user/${userInfo._id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setBookingHistory(Array.isArray(res.data) ? res.data : []);
+  } catch (err) {
+    setBookingHistory([]);
+    setSnackbar({
+      open: true,
+      message: 'Không thể tải lịch sử đặt sân!',
+      severity: 'error',
+    });
+  } finally {
+    setHistoryLoading(false);
+  }
+};
+
+const handleCloseHistoryDialog = () => {
+  setHistoryDialogOpen(false);
+};
+
 
   const handleLoginSuccess = (user, userRole, token) => {
     setRole(userRole);
@@ -215,7 +255,7 @@ useEffect(() => {
           {!isMobile && (
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <Button color="inherit" startIcon={<HomeIcon />}>Trang Chủ</Button>
-              <Button color="inherit" startIcon={<HistoryIcon />}>Lịch Sử Đặt</Button>
+              <Button color="inherit" startIcon={<HistoryIcon />} onClick={handleOpenHistoryDialog}>Sân Đã Đặt</Button>
               <Tooltip title="Thông báo">
                 <IconButton color="inherit">
                   <Badge badgeContent={3} color="error">
@@ -343,9 +383,9 @@ useEffect(() => {
               <ListItemIcon><ContactsIcon /></ListItemIcon>
               <ListItemText primary="Liên Hệ" />
             </ListItem>
-            <ListItem button>
+            <ListItem button onClick={handleOpenHistoryDialog}>
               <ListItemIcon><HistoryIcon /></ListItemIcon>
-              <ListItemText primary="Lịch Sử Đặt" />
+              <ListItemText primary="Sân đã đặt" />
             </ListItem>
             <ListItem button>
               <ListItemIcon>
@@ -788,8 +828,15 @@ useEffect(() => {
                 >
                   {snackbar.message}
                 </Alert>
-              </Snackbar>
+      </Snackbar>
 
+      {/* */}
+      <BookingHistoryDialog
+        open={historyDialogOpen}
+        loading={historyLoading}
+        bookings={bookingHistory}
+        onClose={handleCloseHistoryDialog}
+      />
     </Box>
   );
 }
