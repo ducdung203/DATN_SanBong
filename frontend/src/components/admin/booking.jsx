@@ -23,10 +23,10 @@ export default function AdminBooking() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [formData, setFormData] = useState({
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });  const [formData, setFormData] = useState({
     customerName: '',
     phoneNumber: '',
+    email: '',
     fieldId: '',
     fieldType: '',
     startTime: '',

@@ -17,6 +17,8 @@ const bookingSchema = new mongoose.Schema({
     ref: 'Field',
     required: true
   },
+  email: { type: String },
+  reminderSent: { type: Boolean, default: false },
   // Thêm trường userId để lưu ID người đặt sân
   userId: {
     type: mongoose.Schema.Types.ObjectId,

@@ -37,14 +37,15 @@ import axios from 'axios';
 function PaymentForm({ onSubmit, customerInfo }) {
   const location = useLocation();
   const navigate = useNavigate();
-  console.log("customerInfo",customerInfo._id)
+  console.log("customerInfo",customerInfo)
 
   const { formData, extraData } = location.state || {};
   const { date, startTime, endTime, fieldType } = formData || {};
-  const { userId, note } = extraData || {};
+  const { userId, email, note } = extraData || {};
   const locationState = location.state || {};  // Đảm bảo state có giá trị hợp lệ
   console.log("locationState",locationState);
   console.log("userId",userId)
+  console.log("email",email)
 
   // States
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -83,14 +84,45 @@ function PaymentForm({ onSubmit, customerInfo }) {
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      // Đầu tiên tạo booking
+  try {
+    if (paymentMethod === 'vnpay') {
+      // Tạo URL thanh toán VNPAY - Gửi thông tin cần thiết để backend tạo booking sau khi thanh toán thành công
+      const bookingInfo = {
+        fieldId: customerInfo._id,
+        userId,
+        email,
+        date,
+        startTime,
+        endTime,
+        totalAmount,
+        fieldType,
+        paymentMethod,
+      };      
+        const paymentResponse = await axios.post('http://localhost:4000/api/payment/create_payment_url', {
+        amount: Math.round(totalAmount), // Đảm bảo amount là số nguyên
+        orderInfo: `Thanh toan dat san ${customerInfo.name}`, // Thêm orderInfo rõ ràng
+        bookingInfo // Gửi thông tin booking để lưu sau khi thanh toán thành công
+      });
+
+      console.log('Payment Response:', paymentResponse.data); // Log để debug
+
+      if (paymentResponse.data && paymentResponse.data.paymentUrl) {
+        const paymentUrl = paymentResponse.data.paymentUrl;
+        // Mở URL trong cửa sổ mới để tránh vấn đề với môi trường ảo
+        window.open(paymentUrl, '_blank');
+      } else {
+        throw new Error('Không thể tạo URL thanh toán VNPAY.');
+      }
+
+    } else {
+      // Thanh toán tại sân: tạo booking ngay
       const bookingResponse = await axios.post('http://localhost:4000/api/bookings', {
-        fieldId: customerInfo._id, // ID của sân bóng
-        userId, // ID của người dùng đang đăng nhập
+        fieldId: customerInfo._id,
+        userId,
+        email,
         date,
         startTime,
         endTime,
@@ -99,34 +131,18 @@ function PaymentForm({ onSubmit, customerInfo }) {
         paymentMethod,
       });
 
-      console.log("bookingResponse",bookingResponse.data.booking._id)
-      const bookingId = bookingResponse.data.booking._id;
-
-      if (paymentMethod === 'vnpay') {
-        // Gọi API tạo URL thanh toán VNPAY
-        const paymentResponse = await axios.post('http://localhost:4000/api/payment/create_payment_url', {
-          bookingId,
-          amount: totalAmount,
-        });
-
-        // Chuyển hướng đến trang thanh toán VNPAY
-        if (paymentResponse.data.code === '00') {
-          window.location.href = paymentResponse.data.data;
-        } else {
-          setError('Có lỗi xảy ra khi tạo URL thanh toán!');
-        }
-      } else {
-        // Thanh toán tại sân - hiển thị thông báo thành công
-        setActiveStep(1);
-        setSuccessDialogOpen(true);
-      }
-    } catch (err) {
-      console.error('Lỗi khi đặt sân:', err);
-      setError('Đã xảy ra lỗi khi xử lý thanh toán. Vui lòng thử lại sau.');
-    } finally {
-      setLoading(false);
+      console.log("bookingResponse", bookingResponse.data.booking._id);
+      setActiveStep(1);
+      setSuccessDialogOpen(true);
     }
-  };
+  } catch (err) {
+    console.error('Lỗi khi đặt sân:', err);
+    setError('Đã xảy ra lỗi khi xử lý. Vui lòng thử lại sau.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleCloseSuccessDialog = () => {
     setSuccessDialogOpen(false);
@@ -136,10 +152,6 @@ function PaymentForm({ onSubmit, customerInfo }) {
 
   // Nếu không có thông tin cần thiết
   if (!customerInfo._id || !customerInfo.date || !startTime || !endTime) {
-    console.log("customerInfo",customerInfo._id)
-    console.log("customerInfo",customerInfo.date)
-    console.log("customerInfo",startTime)
-    console.log("customerInfo",endTime)
     console.error('Thiếu thông tin đặt sân:', customerInfo._id); 
     return (
       <Container maxWidth="md" sx={{ mt: 12, mb: 8 }}>

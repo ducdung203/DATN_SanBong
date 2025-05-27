@@ -37,7 +37,7 @@ function SearchResults() {
   const navigate = useNavigate();
   const { formData, extraData } = location.state || {};
   const { date, startTime, endTime, fieldType } = formData || {};
-  const { userId, note } = extraData || {};
+  const { userId, email, note } = extraData || {};
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,6 +49,7 @@ function SearchResults() {
 
   useEffect(() => {
     console.log("userId",userId)
+    console.log("gmail",email)
     // Kiểm tra nếu không có dữ liệu tìm kiếm
     if (!date || !startTime || !endTime || !fieldType) {
       setError('Thiếu thông tin tìm kiếm. Vui lòng thử lại.');

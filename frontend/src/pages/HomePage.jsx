@@ -44,6 +44,8 @@ import BookingHistoryDialog from '../components/BookingHistoryDialog';
 function HomePage() {
   const navigate = useNavigate();
 
+  const [token, setToken] = useState(localStorage.getItem('token'));
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -69,8 +71,7 @@ function HomePage() {
     open: false,
     message: '',
     severity: 'info',
-  });
-
+  });    
   const handleSearch = () => {
     const { date, startTime, endTime, fieldType } = formData;
 
@@ -86,14 +87,16 @@ function HomePage() {
         severity: 'error',
       });
       return;
-    }
+    }    
 
-    console.log('Tìm kiếm sân với dữ liệu:', formData);
-    console.log("userId",userInfo._id)
-    navigate('/search-results', {
+  navigate('/search-results', {
       state: {
         formData,
-        extraData: { userId: userInfo._id, note: 'Id người dùng' },
+        extraData: { 
+          userId: userInfo._id,
+          email: userInfo.email,
+          note: 'Id và email người dùng' 
+        },
       },
     }); // Chuyển hướng đến trang kết quả
   };
@@ -148,6 +151,7 @@ useEffect(() => {
         setUserInfo(user);
         console.log('id người dùng:', user._id);
         setRole(role); // Lưu vai trò
+        
       })
       .catch((err) => {
         console.error('Xác thực token thất bại:', err);
@@ -159,7 +163,7 @@ useEffect(() => {
   } else {
     setLoading(false); // Không có token, kết thúc tải dữ liệu
   }
-}, []);
+}, [token]);
 
 const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 const [bookingHistory, setBookingHistory] = useState([]);
@@ -198,16 +202,15 @@ const handleCloseHistoryDialog = () => {
   setHistoryDialogOpen(false);
 };
 
-
-  const handleLoginSuccess = (user, userRole, token) => {
+const handleLoginSuccess = (user, userRole, token) => {
     setRole(userRole);
     setCurrentUser(user); // Lưu thông tin người dùng sau khi đăng nhập
-    
     localStorage.setItem('token', token); // Lưu token vào localStorage
+    setToken(token); // Cập nhật token trong state
   };
 
    // Đóng snackbar
-   const handleCloseSnackbar = () => {
+  const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
@@ -762,13 +765,13 @@ const handleCloseHistoryDialog = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <PhoneIcon sx={{ mr: 1, fontSize: 20 }} />
                 <Typography variant="body1">
-                   0988 888 888
+                   039 4044 352
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <EmailIcon sx={{ mr: 1, fontSize: 20 }} />
                 <Typography variant="body1">
-                  sanbongthanhhai@gmail.com
+                  dungnguyenduc101@gmail.com
                 </Typography>
               </Box>
             </Grid>
@@ -777,12 +780,8 @@ const handleCloseHistoryDialog = () => {
                 Giờ Hoạt Động
               </Typography>
               <Box sx={{ mb: 1 }}>
-                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Thứ Hai - Thứ Sáu</Typography>
-                <Typography variant="body2">8:00 - 22:00</Typography>
-              </Box>
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Thứ Bảy - Chủ Nhật</Typography>
-                <Typography variant="body2">7:00 - 23:00</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 'bold' }}>Thứ Hai - Chủ Nhật</Typography>
+                <Typography variant="body2">8:00 - 23:00</Typography>
               </Box>
               <Box sx={{ mt: 3 }}>
                 <Button 

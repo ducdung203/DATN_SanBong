@@ -4,7 +4,7 @@ const Booking = require('../models/Booking'); // Import model Booking
 
 // API đặt sân bóng
 router.post('/', async (req, res) => {
-  const { fieldId, date, startTime, endTime, totalAmount, userId, fieldType, paymentStatus, name, sdt } = req.body;
+  const { fieldId, date, startTime, endTime, totalAmount, userId, fieldType, paymentStatus, name, sdt, email } = req.body;
   console.log(req.body);
 
   try {
@@ -12,6 +12,7 @@ router.post('/', async (req, res) => {
     const newBooking = new Booking({
       fieldId,
       userId,
+      email,
       date,
       startTime,
       endTime,

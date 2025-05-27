@@ -8,7 +8,8 @@ const fieldRoutes = require('./routes/fields');
 const deviceRoutes = require('./routes/devices');
 const paymentRoutes = require('./routes/payment'); // Import route payment
 const dashboardRoutes = require('./routes/dashboard');
-
+const cron = require('node-cron');
+const { checkAndSendReminders } = require('./services/emailService');
 
 const app = express();
 const port = 4000;
@@ -38,6 +39,17 @@ app.use('/api/users', userRoutes); // Sử dụng route users
 app.use('/api/payment', paymentRoutes); // Thêm route payment
 
 app.use('/api/dashboard', dashboardRoutes);
+
+// Lên lịch kiểm tra và gửi email mỗi 30 phút
+cron.schedule('*/30 * * * *', () => {
+  console.log('Checking for bookings to send reminders...');
+  checkAndSendReminders();
+});
+
+// setInterval(() => {
+//   console.log(`[${new Date().toLocaleTimeString()}] Kiểm tra đặt sân (mỗi 5s)...`);
+//   checkAndSendReminders();
+// }, 5000); // 5000 milliseconds = 5 giây
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

@@ -135,6 +135,8 @@ router.post('/search-fields', async (req, res) => {
     for (const field of fields) {
       // Tách giờ hoạt động của sân thành giờ bắt đầu và giờ kết thúc
       const [fieldStartTime, fieldEndTime] = field.hours.split(' - ');
+      
+      // Chuyển đổi giờ hoạt động của sân thành phút
       const fieldStartMinutes = timeToMinutes(fieldStartTime);
       const fieldEndMinutes = timeToMinutes(fieldEndTime);
       console.log(`Giờ hoạt động của sân ${field.name}: ${fieldStartMinutes} - ${fieldEndMinutes}`); // Log giờ hoạt động của sân
@@ -147,16 +149,20 @@ router.post('/search-fields', async (req, res) => {
 
       // Tìm tất cả các đặt sân trùng giờ
       const bookings = await Booking.find({
-        fieldId: field._id,
-        date: date,
-        $or: [
-          { startTime: { $lt: endMinutes, $gte: startMinutes } },
-          { endTime: { $gt: startMinutes, $lte: endMinutes } },
-          { startTime: { $lte: startMinutes }, endTime: { $gte: endMinutes } },
-        ],
+         fieldId: field._id,
+         date: date,
       });
 
-      if (bookings.length === 0) {
+      const conflictBookings = bookings.filter(b => {
+      const bStart = timeToMinutes(b.startTime);
+      const bEnd = timeToMinutes(b.endTime);
+      // Điều kiện trùng giờ
+      return bStart < endMinutes && bEnd > startMinutes;
+      });
+
+      console.log(`Sân ${field.name} có ${conflictBookings.length} đặt sân trùng giờ.`); // Log số lượng đặt sân trùng giờ
+
+      if (conflictBookings.length === 0) {
         availableFields.push(field);  // Sân này không bị trùng giờ, thêm vào danh sách
       }
     }
